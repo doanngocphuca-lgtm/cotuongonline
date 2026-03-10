@@ -4,24 +4,27 @@ class NetworkManager {
 
   private socket: Socket | null = null
 
-  connect(){
+  connect(): Socket {
 
-    if(!this.socket){
+    if (!this.socket) {
 
-      this.socket = io("https://cotuongonline.onrender.com",{
-        transports:["websocket"]
+      this.socket = io("https://cotuongonline.onrender.com", {
+        transports: ["websocket"],
+        reconnection: true,
+        reconnectionAttempts: 5,
+        reconnectionDelay: 1000
       })
 
-      this.socket.on("connect",()=>{
-        console.log("Connected:",this.socket?.id)
+      this.socket.on("connect", () => {
+        console.log("Connected:", this.socket?.id)
       })
 
-      this.socket.on("disconnect",()=>{
+      this.socket.on("disconnect", () => {
         console.log("Disconnected")
       })
 
-      this.socket.on("connect_error",(err)=>{
-        console.error("Socket error:",err)
+      this.socket.on("connect_error", (err) => {
+        console.error("Socket connection error:", err)
       })
 
     }
@@ -30,35 +33,45 @@ class NetworkManager {
 
   }
 
-  disconnect(){
+  disconnect() {
 
-    if(this.socket){
-
+    if (this.socket) {
       this.socket.disconnect()
       this.socket = null
-
     }
 
   }
 
-  emit(event:string,data?:any){
+  emit(event: string, data?: any) {
 
-    if(!this.socket){
+    if (!this.socket) {
       this.connect()
     }
 
-    this.socket?.emit(event,data)
+    this.socket!.emit(event, data)
 
   }
 
-  on(event:string,callback:(data:any)=>void){
+  on(event: string, callback: (data: any) => void) {
 
-    if(!this.socket){
+    if (!this.socket) {
       this.connect()
     }
 
-    this.socket?.on(event,callback)
+    this.socket!.on(event, callback)
 
+  }
+
+  off(event: string) {
+
+    if (this.socket) {
+      this.socket.off(event)
+    }
+
+  }
+
+  getSocket() {
+    return this.socket
   }
 
 }

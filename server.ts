@@ -3,10 +3,18 @@ import http from "http"
 import { Server } from "socket.io"
 
 const app = express()
+
+// route test server
+app.get("/", (req, res) => {
+  res.send("Xiangqi Online Server Running")
+})
+
 const server = http.createServer(app)
 
 const io = new Server(server,{
-  cors:{ origin:"*" }
+  cors:{
+    origin:"*"
+  }
 })
 
 const rooms:any = {}
@@ -19,6 +27,7 @@ io.on("connection",(socket)=>{
 
   console.log("Player connected:",socket.id)
 
+  // create room
   socket.on("createRoom",()=>{
 
     const code = generateRoomCode()
@@ -35,6 +44,7 @@ io.on("connection",(socket)=>{
 
   })
 
+  // join room
   socket.on("joinRoom",(code)=>{
 
     const room = rooms[code]
@@ -55,6 +65,7 @@ io.on("connection",(socket)=>{
 
     console.log("Player joined:",code)
 
+    // start game
     if(room.players.length === 2){
 
       const players = room.players
@@ -75,12 +86,28 @@ io.on("connection",(socket)=>{
 
   })
 
+  // move piece
   socket.on("move",(data)=>{
 
-    socket.to(data.roomCode).emit("moveMade",data.move)
+    const {roomCode,move} = data
+
+    socket.to(roomCode).emit("moveMade",move)
 
   })
 
+  // leave room
+  socket.on("leaveRoom",(code)=>{
+
+    socket.leave(code)
+
+    if(rooms[code]){
+      rooms[code].players =
+        rooms[code].players.filter((id:string)=>id !== socket.id)
+    }
+
+  })
+
+  // disconnect
   socket.on("disconnect",()=>{
 
     console.log("Player disconnected:",socket.id)
@@ -101,6 +128,10 @@ io.on("connection",(socket)=>{
 
 })
 
-server.listen(3000,()=>{
-  console.log("Server running on 3000")
+const PORT = process.env.PORT || 3000
+
+server.listen(PORT,()=>{
+
+  console.log("Server running on",PORT)
+
 })
