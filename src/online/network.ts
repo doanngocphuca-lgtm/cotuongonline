@@ -1,36 +1,66 @@
-import { io, Socket } from "socket.io-client";
+import { io, Socket } from "socket.io-client"
 
 class NetworkManager {
-  private socket: Socket | null = null;
 
-  connect() {
-    if (!this.socket) {
-      this.socket = io("http://localhost:3000");
+  private socket: Socket | null = null
 
-      this.socket.on("connect", () => {
-        console.log("Connected:", this.socket?.id);
-      });
+  connect(){
 
-      this.socket.on("disconnect", () => {
-        console.log("Disconnected");
-      });
+    if(!this.socket){
+
+      this.socket = io("https://cotuongonline.onrender.com",{
+        transports:["websocket"]
+      })
+
+      this.socket.on("connect",()=>{
+        console.log("Connected:",this.socket?.id)
+      })
+
+      this.socket.on("disconnect",()=>{
+        console.log("Disconnected")
+      })
+
+      this.socket.on("connect_error",(err)=>{
+        console.error("Socket error:",err)
+      })
+
     }
-    return this.socket;
+
+    return this.socket
+
   }
 
-  emit(event: string, data?: any) {
-    if (!this.socket) {
-      this.connect();
+  disconnect(){
+
+    if(this.socket){
+
+      this.socket.disconnect()
+      this.socket = null
+
     }
-    this.socket?.emit(event, data);
+
   }
 
-  on(event: string, callback: (data: any) => void) {
-    if (!this.socket) {
-      this.connect();
+  emit(event:string,data?:any){
+
+    if(!this.socket){
+      this.connect()
     }
-    this.socket?.on(event, callback);
+
+    this.socket?.emit(event,data)
+
   }
+
+  on(event:string,callback:(data:any)=>void){
+
+    if(!this.socket){
+      this.connect()
+    }
+
+    this.socket?.on(event,callback)
+
+  }
+
 }
 
-export const network = new NetworkManager();
+export const network = new NetworkManager()

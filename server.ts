@@ -1,57 +1,106 @@
-import express from "express";
-import http from "http";
-import { Server } from "socket.io";
+import express from "express"
+import http from "http"
+import { Server } from "socket.io"
 
-const app = express();
-const server = http.createServer(app);
+const app = express()
+const server = http.createServer(app)
 
-const io = new Server(server, {
-  cors: {
-    origin: "*",
-  },
-});
+const io = new Server(server,{
+  cors:{ origin:"*" }
+})
 
-const rooms:any = {};
+const rooms:any = {}
 
 function generateRoomCode(){
-  return Math.floor(100000 + Math.random()*900000).toString();
+  return Math.floor(100000 + Math.random()*900000).toString()
 }
 
-io.on("connection", (socket) => {
+io.on("connection",(socket)=>{
 
-  console.log("Player connected:", socket.id);
+  console.log("Player connected:",socket.id)
 
-  socket.on("createRoom", () => {
+  socket.on("createRoom",()=>{
 
-    const roomCode = generateRoomCode();
+    const code = generateRoomCode()
 
-    rooms[roomCode] = { players:[socket.id] };
+    rooms[code] = {
+      players:[socket.id]
+    }
 
-    socket.join(roomCode);
+    socket.join(code)
 
-    socket.emit("roomCreated", roomCode);
+    socket.emit("roomCreated",code)
 
-  });
+    console.log("Room created:",code)
+
+  })
 
   socket.on("joinRoom",(code)=>{
 
-    if(!rooms[code]){
-      socket.emit("roomNotFound","Room not found");
-      return;
+    const room = rooms[code]
+
+    if(!room){
+      socket.emit("roomNotFound","Room not found")
+      return
     }
 
-    rooms[code].players.push(socket.id);
+    if(room.players.length >= 2){
+      socket.emit("roomFull","Room full")
+      return
+    }
 
-    socket.join(code);
+    room.players.push(socket.id)
 
-    io.to(code).emit("gameStart",{room:code});
+    socket.join(code)
 
-  });
+    console.log("Player joined:",code)
 
-});
+    if(room.players.length === 2){
 
-const PORT = process.env.PORT || 3000;
+      const players = room.players
 
-server.listen(PORT, () => {
-  console.log("Server running on port", PORT);
-});
+      const colors:any = {}
+
+      colors[players[0]] = "red"
+      colors[players[1]] = "black"
+
+      io.to(code).emit("gameStart",{
+        players,
+        colors
+      })
+
+      console.log("Game start:",code)
+
+    }
+
+  })
+
+  socket.on("move",(data)=>{
+
+    socket.to(data.roomCode).emit("moveMade",data.move)
+
+  })
+
+  socket.on("disconnect",()=>{
+
+    console.log("Player disconnected:",socket.id)
+
+    for(const code in rooms){
+
+      if(rooms[code].players.includes(socket.id)){
+
+        io.to(code).emit("playerLeft")
+
+        delete rooms[code]
+
+      }
+
+    }
+
+  })
+
+})
+
+server.listen(3000,()=>{
+  console.log("Server running on 3000")
+})

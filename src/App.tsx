@@ -43,12 +43,22 @@ export default function App() {
           setRoomCode(code);
           setOnlineMenu('waiting');
         },
-        onGameStart: ({ players, colors }) => {
-          setOnlineMenu('none');
-          soundManager.play('start');
-          const myColor = colors[socket.id];
-          setOnlineRole(myColor);
-          setIsMyTurn(myColor === 'red');
+       onGameStart: (data) => {
+
+  const socket = network.connect()
+
+  const myColor = data.colors[socket.id]
+
+  console.log("My color:", myColor)
+
+  setOnlineRole(myColor)
+
+  setIsMyTurn(myColor === "red")
+
+  setOnlineMenu("none")
+
+  soundManager.play("start")
+
         },
         onRoomNotFound: (msg) => {
           alert(msg);
@@ -178,13 +188,24 @@ export default function App() {
   };
 
   const handleOnlineChoice = (choice: 'create' | 'join') => {
-    soundManager.play('click');
-    if (choice === 'create') {
-      roomManager.createRoom();
-    } else {
-      setOnlineMenu('join');
-    }
-  };
+
+  soundManager.play('click');
+
+  if (choice === 'create') {
+
+    // chuyển sang online mode để kích hoạt socket useEffect
+    setMode('online')
+
+    // tạo phòng
+    roomManager.createRoom()
+
+  } else {
+
+    setOnlineMenu('join')
+
+  }
+
+}
 
   return (
     <div className={`min-h-screen ${settings.boardTheme === 'light' ? 'bg-stone-200' : ''}`}>
