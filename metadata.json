@@ -1,0 +1,5 @@
+{
+  "name": "Xiangqi Master",
+  "description": "A complete Chinese Chess (Xiangqi) game with Local, AI, and Online modes.",
+  "requestFramePermissions": []
+}
